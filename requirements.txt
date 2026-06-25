@@ -1,0 +1,9 @@
+fastapi  #runs your FastAPI app
+uvicorn
+python-dotenv
+langchain
+langchain-groq
+langchain-community
+langchain-chroma
+chromadb
+senetence-transformer
