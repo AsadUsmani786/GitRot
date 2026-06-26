@@ -52,10 +52,33 @@ def get_qa_chain():
     return chain, retriever
 
 
-if __name__ == "__main__":
-    chain,retriever = get_qa_chain()
-    question = "what does the load_code_files function do?"
-    answer =chain.invoke(question)
-    sources = retriever.invoke(question)
-    print("Answer:", answer)
-    print("\nSources:", [doc.metadata["filename"] for doc in sources])
+
+def get_doc_chain():
+    llm = ChatGroq(api_key=GROQ_API_KEY,model=GROQ_MODEL, temperature=0.1)
+    vectorstore = get_vectorstore()
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
+
+
+    prompt = PromptTemplate(
+        input_variables=["context","question"],
+        template="""You are a technical writer. Generate clean markdown documents for the following code file.
+        Include: purpose of the file, all functions with their parameters and what they return, and a usage example
+        
+        Code:
+        {context}
+        
+        File: {question}
+        
+        Documentation:"""
+    )
+
+    chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        |StrOutputParser()
+    )
+    return chain,retriever
+
+
+

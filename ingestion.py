@@ -95,10 +95,5 @@ if __name__ =="__main__":
 
 
 
-if __name__ == "__main__":
-    files = load_code_files(".")
-    chunks = chunk_files(files)
-    print(f"Files: {len(files)}")
-    print(f"Chunks: {len(chunks)}")
-    print(f"\nFirst chunk preview:\n{chunks[0]['text'][:300]}")   
+ 
                                     

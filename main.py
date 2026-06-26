@@ -1,27 +1,44 @@
 from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel
 from ingestion import load_code_files,chunk_files,embed_and_store
-from chain import get_qa_chain 
+from chain import get_qa_chain, get_doc_chain
+import os
 
-app = FastAPI(title = "DevDocs AI")
+
+
+
+app = FastAPI(title = "GitRot")
+
+
 
 @app.get("/")
 def root():
-    return{"message" : "DevDocs AI is running"}
+    return{"message" : "GitRot is running"}
 
 class IngestRequest(BaseModel):
     folder_path: str
 
 class AskRequest(BaseModel):
-    question: str    
+    question: str  
+
+class DocsRequest(BaseModel):
+    filename: str      
 
 @app.post("/ingest")
 def ingest(req: IngestRequest):
+    if not os.path.exists(req.folder_path):
+        raise HTTPException(status_code=400, detail=f"Folder not found: {req.folder_path}")
+    
     files = load_code_files(req.folder_path)
+    
+    if not files:
+        raise HTTPException(status_code=400, detail="No supported code files found in that folder.")
+    
     chunks = chunk_files(files)
-    result = embed_and_store(chunks)
-    return{
-        "files found" : len(files),
+    embed_and_store(chunks)
+    return {
+        "status": "success",
+        "files_ingested": len(files),
         "chunks_stored": len(chunks)
     }
 
@@ -37,5 +54,19 @@ def ask(req: AskRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, details=str(e))
+
+
+
+@app.post("/generate-docs")
+def generate_docs(req: DocsRequest):
+    try:
+        chain, retriever = get_doc_chain()
+        docs =chain.invoke(req.filename)
+        return{
+            "filename": req.filename,
+            "documentation": docs
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
