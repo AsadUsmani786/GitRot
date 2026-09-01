@@ -1,7 +1,13 @@
-import os   # for python to interact with our os
-from pathlib import Path 
+import os
+import shutil
+from pathlib import Path
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from config import CHROMA_DIR, EMBED_MODEL
 
 SUPPORTED_EXTENSIONS = [".py", ".js", ".ts", ".c", ".java", ".cpp", ".go", ".md"]
+
 
 def load_code_files(folder_path: str):
     files = []
@@ -20,23 +26,13 @@ def load_code_files(folder_path: str):
                     })
                     print(f"Read: {filename} - {len(content)} chars")
     return files
-                    
 
-  
-
-
-
-
-
-#chunking
-
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 def chunk_files(files: list):
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 1000,
-        chunk_overlap = 150,
-        separators = ["\nclass","\ndef","\n\n","\n",""],
+        chunk_size=1000,
+        chunk_overlap=150,
+        separators=["\nclass", "\ndef", "\n\n", "\n", ""],
     )
 
     chunks = []
@@ -51,49 +47,24 @@ def chunk_files(files: list):
     return chunks
 
 
-
-
-#embedding the chunks and storing the vector into chromadb
-
-from langchain_huggingface import HuggingFaceEmbeddings      #why hf embs ?
-from langchain_chroma import Chroma
-
-CHROMA_DIR ="./chroma_db"
-EMBED_MODEL = "all-MiniLM-L6-v2"
-
 def embed_and_store(chunks: list):
     print(f"Embeddings {len(chunks)} chunks ... (first run downloads the model)")
 
+    persist_path = Path(CHROMA_DIR)
+    if persist_path.exists():
+        shutil.rmtree(persist_path)
+
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
-    texts =[chunk["text"] for chunk in chunks]
+    texts = [chunk["text"] for chunk in chunks]
     metadatas = [{"source": chunk["source"], "filename": chunk["filename"]} for chunk in chunks]
 
     vectorstore = Chroma.from_texts(
         texts=texts,
         metadatas=metadatas,
         embedding=embeddings,
-        persist_directory=CHROMA_DIR
+        persist_directory=CHROMA_DIR,
     )
 
     print(f"Stored {len(texts)} chunks in ChromaDB at {CHROMA_DIR}")
     return vectorstore
-
-
-
-if __name__ =="__main__":
-    files =load_code_files(".")
-    chunks = chunk_files(files)
-    print(f"Files: {len(files)}, Chunks: {len(chunks)}")
-    embed_and_store(chunks)
-
-          
-
-
-
-
-
-
-
- 
-                                    

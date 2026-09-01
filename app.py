@@ -18,7 +18,7 @@ if st.sidebar.button("Ingest"):
                 res = requests.post(f"{API_URL}/ingest", json={"folder_path": folder_path})
                 if res.status_code == 200:
                     data = res.json()
-                    st.sidebar.success(f" {data['files_ingested']} files, {data['chunks_stored']} chunks stored")
+                    st.sidebar.success(f"✅ {data['files_ingested']} files, {data['chunks_stored']} chunks stored")
                 else:
                     st.sidebar.error(f"Error {res.status_code}: {res.text}")
             except Exception as e:
@@ -27,7 +27,7 @@ if st.sidebar.button("Ingest"):
         st.sidebar.warning("Please enter a folder path")
 
 # --- Main area tabs ---
-tab1, tab2 = st.tabs(["Ask", " Generate Docs"])
+tab1, tab2 = st.tabs(["💬 Ask", "📄 Generate Docs"])
 
 with tab1:
     st.subheader("Ask anything about your CodeBase")
@@ -35,14 +35,17 @@ with tab1:
     if st.button("Ask"):
         if question:
             with st.spinner("Thinking..."):
-                res = requests.post(f"{API_URL}/ask", json={"question": question})
-            if res.status_code == 200:
-                data = res.json()
-                st.markdown(data["answer"])
-                st.divider()
-                st.caption("Sources: " + ", ".join(data["sources"]))
-            else:
-                st.error(res.json()["detail"])
+                try:
+                    res = requests.post(f"{API_URL}/ask", json={"question": question})
+                    if res.status_code == 200:
+                        data = res.json()
+                        st.markdown(data["answer"])
+                        st.divider()
+                        st.caption("Sources: " + ", ".join(data["sources"]))
+                    else:
+                        st.error(f"Error {res.status_code}: {res.text}")
+                except Exception as e:
+                    st.error(f"Could not connect to API: {e}")
         else:
             st.warning("Please enter a question")
 
@@ -52,11 +55,14 @@ with tab2:
     if st.button("Generate"):
         if filename:
             with st.spinner("Generating docs..."):
-                res = requests.post(f"{API_URL}/generate-docs", json={"filename": filename})
-            if res.status_code == 200:
-                data = res.json()
-                st.markdown(data["documentation"])
-            else:
-                st.error(res.json()["detail"])
+                try:
+                    res = requests.post(f"{API_URL}/generate-docs", json={"filename": filename})
+                    if res.status_code == 200:
+                        data = res.json()
+                        st.markdown(data["documentation"])
+                    else:
+                        st.error(f"Error {res.status_code}: {res.text}")
+                except Exception as e:
+                    st.error(f"Could not connect to API: {e}")
         else:
             st.warning("Please enter a filename")
