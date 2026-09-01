@@ -1,9 +1,13 @@
-fastapi  #runs your FastAPI app
+fastapi
 uvicorn
 python-dotenv
+streamlit
+requests
 langchain
 langchain-groq
 langchain-community
+langchain-huggingface
+langchain-text-splitters
 langchain-chroma
 chromadb
-senetence-transformer
+sentence-transformers
